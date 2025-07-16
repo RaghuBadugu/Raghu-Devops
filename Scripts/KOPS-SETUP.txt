@@ -34,6 +34,10 @@ i.e. aws s3 mb s3://rag.k8s.local
 
    kops create cluster --name raghu.k8s.local --zones us-east-1a --master-size t2.medium --node-size t2.micro --node-count=2
 
+  #To create two nodes in different zones:
+
+   kops create cluster --name=raghu.k8s.local --zones=us-east-1a,us-east-1b --master-zones=us-east-1a --control-plane-size=t2.medium --node-count=2 --node-size=t2.micro
+
 10) to create resources in cloud (ec2, vpc, SG, Autoscaling Groups, LB)
    kops update cluster --name raghu1.k8s.local --yes --admin
 11) kops get cluster
