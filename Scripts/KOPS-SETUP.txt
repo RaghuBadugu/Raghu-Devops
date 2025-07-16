@@ -1,0 +1,40 @@
+1) install EC2 instance t2.micro, 30GB EBS volume
+2) install AWS CLI
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+  /usr/local/bin/aws --version
+   ll -a
+   vi .bashrc 
+   source .bashrc 
+3) install kubectl
+ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    ll
+   chmod 775 kubectl or chmod +x kubctl
+   mv kubectl /usr/local/bin/
+   kubectl version
+ 4) install KOPS
+curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f/kops-linux-amd64
+   ll
+   chmod 775 kops 
+   kops version
+
+5) aws configure (from IAM)
+6) create bucket using CLI
+--->> aws s3 mb s3://bucket_name
+i.e. aws s3 mb s3://rag.k8s.local
+-->> Enable bucket versioning manually
+7) export KOPS_STATE_STORE="s3://rag.k8s.local"
+8) To create KOPS cluster
+   kops create cluster --name raghu.k8s.local --zones us-east-1a --master-size t2.medium --node-size t2.micro
+
+#To create with two or more nodes:
+
+kops create cluster --name raghu.k8s.local --zones us-east-1a --master-size t2.medium --node-size t2.micro --node-count=2
+
+9) to create resources in cloud (ec2, vpc, SG, Autoscaling Groups, LB)
+kops update cluster --name raghu1.k8s.local --yes --admin
+10) kops get cluster
+    kubectl get nodes
+11) To delete the cluster and cloud resources automatically
+    kops delete cluster --name=raghu.k8s.local --yes
