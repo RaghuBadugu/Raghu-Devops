@@ -1,6 +1,7 @@
 1) install EC2 instance t2.micro, 30GB EBS volume
 2) install AWS CLI
-   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"   unzip awscliv2.zip
+   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"   
+   unzip awscliv2.zip
    sudo ./aws/install
    /usr/local/bin/aws --version
    ll -a
@@ -16,6 +17,7 @@
  4) install KOPS
     curl -Lo kops https://github.com/kubernetes/kops/releases/latest/download/kops-linux-amd64
     chmod 775 kops 
+    mv kops usr/local/bin/
     kops version
 
 5) aws configure (from IAM)
