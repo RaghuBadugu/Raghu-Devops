@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: ace-sample-deployment
 spec:
-  replicaset: 3
+  replicas: 3
   selector:
     matchLabels:
       app: ace-sample
