@@ -1,0 +1,21 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ace-sample-deployment
+spec:
+  replicaset: 3
+  selector:
+    matchLabels:
+      app: ace-sample
+  template:
+    metadata:
+      labels:
+        app: ace-sample
+    spec:
+      containers:
+        - name: ace-container
+          image: raghubadugu/ace-sample-app
+          ports:
+            - containerPort: 7600
+            - containerPort: 7800
