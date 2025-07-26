@@ -1,0 +1,89 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        nodejs 'nodejs'
+    }
+
+    environment {
+        SCANNER_HOME = tool 'mysonar'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/RaghuBadugu/Zomato.git'
+            }
+        }
+
+        stage('Code Quality - SonarQube') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=zomato \
+                        -Dsonar.projectKey=zomato
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit',
+                                odcInstallation: 'dp-check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+
+        stage('Trivy Filesystem Scan') {
+            steps {
+                sh 'trivy fs . > trivyfs.txt'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t image1 .'
+            }
+        }
+
+        stage('Tag & Push Docker Image') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-hub') {
+                        sh 'docker tag image1 raghubadugu/raghu:siva'
+                        sh 'docker push raghubadugu/raghu:siva'
+                    }
+                }
+            }
+        }
+
+        stage('Scan Docker Image with Trivy') {
+            steps {
+                sh 'trivy image raghubadugu/raghu:siva'
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                sh 'docker run -itd --name cont1 -p 3000:3000 raghubadugu/raghu:siva'
+            }
+        }
+    }
+}
