@@ -1,0 +1,17 @@
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  ami = ""
+  instance_type = "t2.micro"
+  availability_zone = "us-east-1c" #if not mention it will take deualt for vpc, SG, subnets(AZ)
+  key_name = "terraform"  #keypair name
+  tags = {
+    Name = "devops"
+  }
+  root_block_device {    #if not mention it will take deualt
+    volume_size = 8
+  }
+  count = 2
+}
