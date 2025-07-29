@@ -1,0 +1,27 @@
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_instance" "one" {
+  ami = var.ami_id
+  instance_type = "var.itype"
+  availability_zone = "us-east-1c"
+  key_name = "terraform"
+  tags = {
+    Name = "devops"
+  }
+  root_block_device {
+    volume_size = 8
+  }
+  count = 2
+}
+
+variable "ami_id" {
+  type = string
+  default = "ami-08a6efd148b1f7504"
+}
+
+variable "itype" {
+  type = string
+  default = "t2.micro"
+}
