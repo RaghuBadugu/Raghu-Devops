@@ -1,0 +1,184 @@
+#terraform code to create auto scaling group includes (vpc, security_groups, launch_configuration, elb) snd s3 to store all tfstate files.
+##############################################
+vi provider.tf
+provider "aws" {
+region = "us-east-1"
+}
+
+vi vpc.tf
+resource "aws_vpc" "one" {
+cidr_block = "10.0.0.0/10"
+tags = {
+name = "myvpc"
+}
+instance_tenancy = "default"
+enable_dns_hostname = "true"
+}
+
+vi subnet.tf
+resource "aws_subnet" "two" {
+vpc_id = aws_vpc.one.id
+cidr_block = "10.0.1.0/24"
+availability_zone = "us-east-1a"
+map_public_ip_on_launch = "true"
+tags = {
+name =
+}
+
+resource "aws_subnet" "three" {
+vpc_id = aws_vpc.one.id
+cidr_block = "10.0.2.0/24"
+availabilty_zone = "us-east-1b"
+tags = {
+
+}
+
+vi igw.tf
+resource "aws_internet_gateway" "igw" {
+vpc_id = aws_vpc.one.id
+tags = {
+}
+}
+
+vi routetable.tf
+resource "aws_route_table" "rt" {
+vpc_id = aws_vpc.one.id
+route {
+cidr_block = "0.0.0.0/0"
+gateway_id = aws_internet_gateway.igw.id
+tags = {
+name =
+}
+}
+
+resource "aws_route_table_association" "sn1" {
+subnet_id = aws_subnet.two.id
+route_table_id = aws_route_table.rt.id
+}
+
+resource "aws_route_table_association" "sn2" {
+subnet_id = aws_subnet.three.id
+route_table_id = aws_route_table.rt.id
+}
+
+##############################################
+
+vi security_group.tf
+
+provider "aws" {
+region = "us-east-1"
+}
+
+resource "aws_security_group" "sg" {
+name = "mysg"
+vpc_id  = aws_vpc.one.id
+
+
+ingress {
+from_port = 22
+to_port = 22
+protocal = "tcp"
+cidr_block = ["0.0.0.0/0"]
+}
+
+ingress {
+from_port = 0
+to_port = 0
+protocal = "-1"
+cidr_block = ["0.0.0.0/0"]
+}
+
+egress {
+from_port = 0
+to_port = 0
+protocal = "-1"
+cidr_block = "0.0.0.0/0"
+}
+}
+##############################################
+
+#Launch Template for AutoScaling group
+
+vi lc.tf
+resource "aws_launch_configuration" "mylc" {
+ami = ""
+instance_type = "t2.micro"
+security_groups = [aws_security_group.sg.id]
+user_data = <<-EOF
+
+#!/bin/bash
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl start httpd
+sudo systemctl enable httpd
+sudo systemctl restart httpd
+sudo echo "<h1>WELCOME TO EIS</h1>" > /var/www/html/index.html
+sudo chmod 777 /var/www/html/index.html
+EOF
+}
+
+# vi elb.tf
+resource "aws_elb" "lb" {
+name = "web-server-lb"
+security_groups = [aws_security_group.sg.id]
+subnets = [aws_subnet.two.id, aws_subnet.three.id]
+
+listener {
+instance_port = 8000
+instance_protocol = "http"
+
+lb_port = 80
+lb_protocol = "http"
+}
+
+#AutoScaling Groups
+vi awf.tf
+resource "aws_autoscaling_group" "webserver_asg" {
+name = "my_asg"
+launch_configuration = aws_launch_configuration.mylc.id
+min_size =1
+max_size = 3
+desired_capacity = 2
+health_check_type ="ec2"
+load_balancer = [aws_elb.ld.id]
+vpc_zone_identifier = [aws_subnet.two.id, aws_subnet.three.id]
+}
+}
+
+
+###############################################################
+S3 BUCKET TO STORE STATEFILES
+
+resource "aws_s3_bucket" "mybucket" {
+name  = "mys3.local"
+}
+
+resource "aws_s3_bucket_ownership_controls" "owner"{
+bucket = aws_s3_bucket.mybucket.id
+rule {
+object_ownership = "BucketOwnerPreferred"
+}
+}
+
+
+resource "aws_s3_bucket_acl" "acl" {
+depends_on = [aws_s3_bucket_ownership_controls.owner]
+bucket = aws_s3_bucket.mybucket.id 
+acl = "private"
+}
+
+resource "aws_bucket_versioning" "version" {
+bucket = aws_s3_bucket.mybucket.id 
+versioning_configuration {
+status = "enable"
+}
+}
+
+##############################################
+terraform {
+backend "s3" {
+bucket = "mys3.local"
+key = "prod/terraform.tfstate"
+region = "us-east-1"
+}
+}
