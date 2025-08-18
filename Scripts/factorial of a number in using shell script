@@ -1,0 +1,17 @@
+#!/bin/bash
+read -p "Enter a number = " num
+if [ "$num" -lt 0 ]
+then
+        echo "not for negative numbers"
+        exit 1
+fi
+
+fact=1
+i=$num
+
+while [ "$i" -gt 1 ]
+do
+        fact=$((fact * i))
+        i=$((i - 1))
+done
+ echo "the fact of $num = $fact"
