@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    stages {
+        stage ("code") {
+            steps {
+                git branch: 'main', url: 'https://github.com/RaghuBadugu/devops18.git'
+            }
+        }
+        stage ("init") {
+            steps {
+                    sh 'yes | terraform init'
+            }
+        }
+        stage ("plan") {
+            steps {
+                sh 'terraform plan'
+            }
+        }
+        stage ("apply") {
+            steps {
+                sh 'terraform apply --auto-approve'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'ansible-playbook -i /opt/ansible/inventory/aws_ec2.yml /var/lib/jenkins/workspace/monolithic-Project/ansible/deployment.yml'
+            }
+        }
+    }
