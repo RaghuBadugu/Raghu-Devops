@@ -27,3 +27,24 @@ pipeline {
             }
         }
     }
+
+
+
+
+
+########################################################################
+in ansible create a Dynamic inventory inside the "cd /etc/ansible/ansible.cfg"
+then add --> inventory = /opt/ansible/inventory/aws_ec2.yml
+            host_key_checking = False
+
+and aslo add in [inventory]
+enable_plugins = aws_ec2
+
+##next place the keypair in "cd /etc/ansible" path i.e. vi ansible-kp (copy & paste)
+#next vi aws_ec2.yml
+---
+plugin: aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:aws:autoscaling:groupName: web-server-asg (tag of an instances created through terraform must be same for all i.e. in this dynamic inventory we are selecting aslave servres based on instance tags.)
